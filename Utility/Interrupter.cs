@@ -40,7 +40,7 @@ namespace Thresh
     public delegate void OnPossibleToInterruptH(Obj_AI_Base unit, InterruptableSpell spell);
 
     /// <summary>
-    ///     The danger level.2
+    ///     The danger level.
     /// </summary>
     public enum InterruptableDangerLevel
     {
@@ -435,7 +435,7 @@ namespace Thresh
                              string.Equals(
                                  enemy.LastCastedspell().Name, spell.SpellName,
                                  StringComparison.CurrentCultureIgnoreCase) &&
-                             Utils2.TickCount - enemy.LastCastedSpellT() < 350 + spell.ExtraDuration) ||
+                             Utils.TickCount - enemy.LastCastedSpellT() < 350 + spell.ExtraDuration) ||
                             (!string.IsNullOrEmpty(spell.BuffName) && enemy.HasBuff(spell.BuffName))))
                 {
                     FireOnInterruptable(enemy, spell);
@@ -457,12 +457,12 @@ namespace Thresh
                         ((unit.LastCastedspell() != null &&
                           string.Equals(
                               unit.LastCastedspell().Name, spell.SpellName, StringComparison.CurrentCultureIgnoreCase) &&
-                          Utils2.TickCount - unit.LastCastedSpellT() < 350 + spell.ExtraDuration) ||
+                          Utils.TickCount - unit.LastCastedSpellT() < 350 + spell.ExtraDuration) ||
                          (spell.BuffName != null && unit.HasBuff(spell.BuffName)) ||
                          (unit.IsMe &&
                           LastCastedSpell.LastCastPacketSent != null &&
                           LastCastedSpell.LastCastPacketSent.Slot == spell.Slot &&
-                          Utils2.TickCount - LastCastedSpell.LastCastPacketSent.Tick < 150 + Game.Ping)));
+                          Utils.TickCount - LastCastedSpell.LastCastPacketSent.Tick < 150 + Game.Ping)));
         }
     }
 }

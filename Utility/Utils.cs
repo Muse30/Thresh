@@ -8,7 +8,7 @@ using SharpDX;
 
 namespace Thresh
 {
-    internal static class Utils2
+    internal static class Utils
     {
 
         private static readonly YasuoWall _yasuoWall = new YasuoWall();

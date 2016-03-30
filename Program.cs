@@ -8,20 +8,22 @@ using EloBuddy.SDK.Events;
 using EloBuddy.SDK.Menu;
 using EloBuddy.SDK.Menu.Values;
 using SharpDX;
-using Thresh.Utils;
+using Thresh.Utility;
 using Color = System.Drawing.Color;
-using HitChance = Thresh.Utils.HitChance;
-using Prediction = Thresh.Utils.Prediction;
+using HitChance = Thresh.Utility.HitChance;
+using Prediction = Thresh.Utility.Prediction;
 
 namespace Thresh
 {
-    public static class Program
+    internal class Program
     {
-        private static Menu ThreshMenu, Menu1, Drawz, Prediciontz, Activator, KMenu;
+        private static Menu ThreshMenu, QMenu, WMenu, EMenu, RMenu, DrawingsMenu, PredictionMenu;
         private static Spell.Skillshot Q, W, E;
         public static Spell.Active Q2, R;
         public static List<AIHeroClient> Enemies = new List<AIHeroClient>(), Allies = new List<AIHeroClient>();
         private static SpellSlot exhaust, ignite, heal;
+        private int grab = 0, grabS = 0;
+        private float grabW = 0;
         static int QMana { get { return 80; } }
         static int WMana { get { return 50 * W.Level; } }
         static int EMana { get { return 60 * E.Level; } }
@@ -36,7 +38,6 @@ namespace Thresh
         public static bool Combo
         {
             get { return (Orbwalker.ActiveModesFlags.HasFlag(Orbwalker.ActiveModes.Combo)); }
-
         }
 
         private static void Main(string[] args)
@@ -66,239 +67,69 @@ namespace Thresh
             E.AllowedCollisionCount = int.MaxValue;
             R = new Spell.Active(SpellSlot.R, 350);
 
-            ThreshMenu = MainMenu.AddMenu("Thresh Port", "thresh");
-
-            Prediciontz = ThreshMenu.AddSubMenu("Prediction", "prediction");
-            StringList(Prediciontz, "Qprediction", "Q Prediction", new[] { "Low", "Medium", "High", "Very High" }, 1);
-            StringList(Prediciontz, "Eprediction", "E Prediction", new[] { "Low", "Medium", "High", "Very High" }, 1);
-
-
-            Menu1 = ThreshMenu.AddSubMenu("Combo", "q");
-            Menu1.Add("AACombo", new CheckBox("Disable AA if E in range"));
-            Menu1.Add("ts", new CheckBox("Use EB TargetSelector"));
-            Menu1.Add("ts1", new CheckBox("Only selected target", false));
-            Menu1.Add("ts2", new CheckBox("All grab-able targets"));
-            Menu1.Add("qCC", new CheckBox("Auto Q cc & dash enemy"));
-            Menu1.Add("minGrab", new Slider("Min range for Q", 250, 125, (int)Q.Range));
-            Menu1.Add("maxGrab", new Slider("Max range for Q", (int)Q.Range, 125, (int)Q.Range));
-            Menu1.AddLabel("Q:");
+            ThreshMenu = MainMenu.AddMenu("TDThresh", "thresh");
+            QMenu = ThreshMenu.AddSubMenu("Q Settings", "q");
+            QMenu.Add("AACombo", new CheckBox("Disable AA if can use E"));
+            QMenu.Add("ts", new CheckBox("Use EB TargetSelector"));
+            QMenu.Add("ts1", new CheckBox("Only one target", false));
+            QMenu.Add("ts2", new CheckBox("All grab-able targets"));
+            QMenu.Add("qCC", new CheckBox("Auto Q cc & dash enemy"));
+            QMenu.Add("minGrab", new Slider("Min range grab", 250, 125, (int)Q.Range));
+            QMenu.Add("maxGrab", new Slider("Max range grab", (int)Q.Range, 125, (int)Q.Range));
+            QMenu.AddLabel("Grab:");
             foreach (var enemy in ObjectManager.Get<AIHeroClient>().Where(enemy => enemy.Team != Player.Team))
-                Menu1.Add("grab" + enemy.ChampionName, new CheckBox(enemy.ChampionName));
-            Menu1.AddSeparator();
-            Menu1.Add("GapQ", new CheckBox("Q on Gapcloser"));
-            Menu1.AddGroupLabel("W SETTINGS");
-            Menu1.AddSeparator();
-            Menu1.Add("autoW", new CheckBox("Auto W"));
-            Menu1.Add("Wdmg", new Slider("W on % hp", 10, 100, 0));
-            Menu1.Add("autoW2", new CheckBox("Auto W if Q Hits"));
-            Menu1.Add("autoW3", new CheckBox("Auto W shield dmg"));
-            Menu1.Add("UseSafeLantern", new CheckBox("Use SafeLantern for our team"));
-            Menu1.Add("wCount", new Slider("Auto W if x enemies near ally", 2, 0, 5));
-            Menu1.Add("SafeLanternKey", new KeyBind("Safe Lantern", false, KeyBind.BindTypes.HoldActive, 'H'));
-            Menu1.AddGroupLabel("E SETTINGS");
-            Menu1.AddSeparator();
-            Menu1.Add("autoE", new CheckBox("Auto E"));
-            Menu1.Add("pushE", new CheckBox("Auto push"));
-            Menu1.Add("inter", new CheckBox("OnPossibleToInterrupt"));
-            Menu1.Add("Gap", new CheckBox("OnEnemyGapcloser"));
-            Menu1.Add("AntiRengar", new CheckBox("Use E AntiGapCloser (Rengar Passive)"));
-            Menu1.Add("pullEnemy", new KeyBind("Pull Enemy", false, KeyBind.BindTypes.HoldActive, 'A'));
-            Menu1.Add("pushEnemy", new KeyBind("Push Enemy", false, KeyBind.BindTypes.HoldActive, 'N'));
-            Menu1.AddGroupLabel("R SETTINGS");
-            Menu1.AddSeparator();
-            Menu1.Add("rCount", new Slider("Auto R if x enemies ", 2, 0, 5));
-            Menu1.Add("rKs", new CheckBox("R ks", false));
-            Menu1.Add("comboR", new CheckBox("Always R in combo", false));
+                QMenu.Add("grab" + enemy.ChampionName, new CheckBox(enemy.ChampionName));
+            QMenu.AddSeparator();
+            QMenu.Add("GapQ", new CheckBox("OnEnemyGapcloser Q"));
 
-            Drawz = ThreshMenu.AddSubMenu("Drawings", "drawings");
-            Drawz.Add("DrawTarget", new CheckBox("Draw Target"));
-            Drawz.Add("qRange", new CheckBox("Q range"));
-            Drawz.Add("wRange", new CheckBox("W range"));
-            Drawz.Add("eRange", new CheckBox("E range"));
-            Drawz.Add("rRange", new CheckBox("R range"));
-            Drawz.Add("onlyRdy", new CheckBox("Draw when skill rdy"));
+            WMenu = ThreshMenu.AddSubMenu("W Settings", "w");
+            WMenu.Add("autoW", new CheckBox("Auto W"));
+            WMenu.Add("Wdmg", new Slider("W % hp", 10, 100, 0));
+            WMenu.Add("autoW2", new CheckBox("Auto W if Q Hits"));
+            WMenu.Add("autoW3", new CheckBox("Auto W shield dmg"));
+            WMenu.Add("wCount", new Slider("Auto W if x enemies near ally", 2, 0, 5));
+            WMenu.Add("SafeLanternKey", new KeyBind("Safe Lantern", false, KeyBind.BindTypes.HoldActive, 'H'));
 
+            EMenu = ThreshMenu.AddSubMenu("E Settings", "E");
+            EMenu.Add("autoE", new CheckBox("Auto E"));
+            EMenu.Add("pushE", new CheckBox("Auto push"));
+            EMenu.Add("inter", new CheckBox("E Interrupt"));
+            EMenu.Add("Gap", new CheckBox("E on Gapcloser"));
+            EMenu.Add("AntiRengar", new CheckBox("Use E AntiGapCloser (Rengar Passive)"));
+            EMenu.Add("pullEnemy", new KeyBind("Pull Enemy", false, KeyBind.BindTypes.HoldActive, 'A'));
+            EMenu.Add("pushEnemy", new KeyBind("Push Enemy", false, KeyBind.BindTypes.HoldActive, 'N'));
 
+            RMenu = ThreshMenu.AddSubMenu("R Settings", "R");
+            RMenu.Add("rCount", new Slider("Auto R if x enemies in range", 2, 0, 5));
+            RMenu.Add("rKs", new CheckBox("R ks", false));
+            RMenu.Add("comboR", new CheckBox("Always R in combo", false));
+
+            PredictionMenu = ThreshMenu.AddSubMenu("Prediction", "prediction");
+            StringList(PredictionMenu, "Qpred", "Q Prediction", new[] { "Low", "Medium", "High", "Very High" }, 1);
+            StringList(PredictionMenu, "Epred", "E Prediction", new[] { "Low", "Medium", "High", "Very High" }, 1);
+
+            DrawingsMenu = ThreshMenu.AddSubMenu("Drawings", "drawings");
+            DrawingsMenu.Add("DrawTarget", new CheckBox("Draw Target"));
+            DrawingsMenu.Add("qRange", new CheckBox("Q range"));
+            DrawingsMenu.Add("wRange", new CheckBox("W range"));
+            DrawingsMenu.Add("eRange", new CheckBox("E range"));
+            DrawingsMenu.Add("rRange", new CheckBox("R range"));
+            DrawingsMenu.Add("onlyRdy", new CheckBox("Draw when skill rdy"));
+
+            Obj_AI_Base.OnProcessSpellCast += Utils.OnProcessSpellCast;
+            TickManager.Tick();
+            Game.OnTick += Qcoltick;
             Orbwalker.OnPreAttack += OnPreAttack;
             Orbwalker.OnPostAttack += OnPostAttack;
+            Interrupter.OnInterruptableSpell += OnInterruptable;
             Game.OnUpdate += Game_OnGameUpdate;
             Gapcloser.OnGapcloser += AntiGapcloser_OnEnemyGapcloser;
             Interrupter.OnInterruptableSpell += Interrupter_OnInterruptableTarget;
             Drawing.OnDraw += Drawing_OnDraw;
-            Obj_AI_Base.OnProcessSpellCast += Utils2.OnProcessSpellCast;
-            TickManager.Tick();
-            Game.OnTick += Qcoltick;
-
+            Obj_AI_Base.OnProcessSpellCast += Obj_AI_Base_OnProcessSpellCast;
         }
 
-        public static class Config
-        {
-            public static bool AACombo
-            {
-                get { return Menu1["AACombo"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool ts
-            {
-                get { return Menu1["ts"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool ts1
-            {
-                get { return Menu1["ts1"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool ts2
-            {
-                get { return Menu1["ts2"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool qCC
-            {
-                get { return Menu1["qCC"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static int minGrab
-            {
-                get { return Menu1["minGrab"].Cast<Slider>().CurrentValue; }
-            }
-
-            public static int maxGrab
-            {
-                get { return Menu1["maxGrab"].Cast<Slider>().CurrentValue; }
-            }
-
-            public static bool GapQ
-            {
-                get { return Menu1["GapQ"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool autoW
-            {
-                get { return Menu1["autoW"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static int Wdmg
-            {
-                get { return Menu1["Wdmg"].Cast<Slider>().CurrentValue; }
-            }
-
-            public static bool autoW2
-            {
-                get { return Menu1["autoW2"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool autoW3
-            {
-                get { return Menu1["autoW3"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static int wCount
-            {
-                get { return Menu1["wCount"].Cast<Slider>().CurrentValue; }
-            }
-
-            public static bool autoE
-            {
-                get { return Menu1["autoE"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool pushE
-            {
-                get { return Menu1["pushE"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool inter
-            {
-                get { return Menu1["inter"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool Gap
-            {
-                get { return Menu1["Gap"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool UseSafeLantern
-            {
-                get { return Menu1["UseSafeLantern"].Cast<CheckBox>().CurrentValue; }
-            }
-
-
-            public static bool AntiRengar
-            {
-                get { return Menu1["AntiRengar"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static int rCount
-            {
-                get { return Menu1["rCount"].Cast<Slider>().CurrentValue; }
-            }
-
-            public static bool rKs
-            {
-                get { return Menu1["rKs"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool comboR
-            {
-                get { return Menu1["comboR"].Cast<CheckBox>().CurrentValue; }
-            }
-            public static bool SafeLanternKey
-            {
-                get { return Menu1["SafeLanternKey"].Cast<KeyBind>().CurrentValue; }
-            }
-
-            public static bool Pull
-            {
-                get { return Menu1["pullEnemy"].Cast<KeyBind>().CurrentValue; }
-            }
-
-            public static bool Push
-            {
-                get { return Menu1["pushEnemy"].Cast<KeyBind>().CurrentValue; }
-            }
-            public static bool qRange
-            {
-                get { return Drawz["qRange"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool wRange
-            {
-                get { return Drawz["wRange"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool eRange
-            {
-                get { return Drawz["eRange"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool rRange
-            {
-                get { return Drawz["rRange"].Cast<CheckBox>().CurrentValue; }
-            }
-            public static bool DrawTarget
-            {
-                get { return Drawz["DrawTarget"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static bool onlyRdy
-            {
-                get { return Drawz["onlyRdy"].Cast<CheckBox>().CurrentValue; }
-            }
-
-            public static int Qpred
-            {
-                get { return Prediciontz["Qpred"].Cast<Slider>().CurrentValue; }
-            }
-
-            public static int Epred
-            {
-                get { return Prediciontz["Epred"].Cast<Slider>().CurrentValue; }
-            }
-        }
-
-
-public static void StringList(Menu menu, string uniqueId, string displayName, string[] values, int defaultValue)
+        public static void StringList(Menu menu, string uniqueId, string displayName, string[] values, int defaultValue)
         {
             var mode = menu.Add(uniqueId, new Slider(displayName, defaultValue, 0, values.Length - 1));
             mode.DisplayName = displayName + ": " + values[mode.CurrentValue];
@@ -317,68 +148,6 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                 E.Cast(sender.ServerPosition);
             }
         }
-
-        private static void AntiGapcloser_OnEnemyGapcloser(AIHeroClient sender, Gapcloser.GapcloserEventArgs gapcloser)
-        {
-            if (E.IsReady() && Config.Gap && gapcloser.Sender.IsValidTarget(E.Range) && sender.IsEnemy)
-            {
-                E.Cast(gapcloser.Sender);
-            }
-            else if (Q.IsReady() && Config.GapQ && gapcloser.Sender.IsValidTarget(Q.Range) && sender.IsEnemy && ObjectManager.Player.IsFacing(sender))
-            {
-                Q.Cast(gapcloser.Sender);
-            }
-        }
-
-        static bool ManaManager()
-        {
-            var status = false;
-            var ReqMana = R.IsReady() ? QMana + EMana + RMana : QMana + EMana;
-
-            if (ReqMana < Player.Mana)
-            {
-                status = true;
-            }
-            else if (Player.MaxHealth * 0.3 > Player.Health)
-            {
-                status = true;
-            }
-
-            return status;
-        }
-
-        static void SafeLantern()
-        {
-            if (!ManaManager())
-                return;
-
-            foreach (var hero in ObjectManager.Get<AIHeroClient>()
-                .Where(x => x.IsAlly && !x.IsDead && !x.IsMe &&
-                Player.Distance(x.Position) < 1500 &&
-                !x.HasBuff("Recall")))
-            {
-                if (Player.HealthPercent < 25)
-                {
-                    if (Player.Distance(hero.Position) <= W.Range)
-                    {
-                        var Pos = W.GetPrediction(hero).CastPosition;
-
-                        CastW(Pos);
-                    }
-                }
-                else if (hero.HasBuffOfType(BuffType.Suppression) ||
-                    hero.HasBuffOfType(BuffType.Taunt) ||
-                    hero.HasBuffOfType(BuffType.Knockup) ||
-                    hero.HasBuffOfType(BuffType.Flee))
-                {
-                    if (Player.Distance(hero.Position) <= W.Range)
-                    {
-                        CastW(hero.Position);
-                    }
-                }
-            }
-        }
-
         static void Pull(Obj_AI_Base target)
         {
             var pos = target.Position.Extend(Player.Position, Player.Distance(target.Position) + 200);
@@ -391,12 +160,7 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
             E.Cast(target);
         }
 
-        private static bool CanUse(SpellSlot sum)
-        {
-            if (sum != SpellSlot.Unknown && Player.Spellbook.CanUseSpell(sum) == SpellState.Ready)
-                return true;
-            return false;
-        }
+
         static void Obj_AI_Base_OnPlayAnimation(Obj_AI_Base sender, GameObjectPlayAnimationEventArgs args)
         {
             if (sender.IsMe)
@@ -418,6 +182,39 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
             }
         }
 
+        private static void AntiGapcloser_OnEnemyGapcloser(AIHeroClient sender, Gapcloser.GapcloserEventArgs gapcloser)
+        {
+            if (E.IsReady() && Config.Gap && gapcloser.Sender.IsValidTarget(E.Range) && sender.IsEnemy)
+            {
+                E.Cast(gapcloser.Sender);
+            }
+            else if (Q.IsReady() && Config.GapQ && gapcloser.Sender.IsValidTarget(Q.Range) && sender.IsEnemy && ObjectManager.Player.IsFacing(sender))
+            {
+                Q.Cast(gapcloser.Sender);
+            }
+        }
+
+        private static bool CanUse(SpellSlot sum)
+        {
+            if (sum != SpellSlot.Unknown && Player.Spellbook.CanUseSpell(sum) == SpellState.Ready)
+                return true;
+            return false;
+        }
+
+        private static void Obj_AI_Base_OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (!sender.IsEnemy || sender.Type != GameObjectType.obj_AI_Base)
+                return;
+
+
+            if (sender.Distance(Player.Position) > 1600)
+                return;
+            var kappa = sender as AIHeroClient;
+
+        }
+
+
+
         public static bool InFountain(AIHeroClient hero)
         {
             var map = Game.MapId;
@@ -428,13 +225,153 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                        .Any(sp => sp.Team == hero.Team && hero.Distance(sp.Position) < fountainRange);
         }
 
-   
+
+
+        private static void Clean()
+        {
+            var qss = Player.InventoryItems.FirstOrDefault(item => item.Id == Ids.Quicksilver.Id);
+            var mercurial = Player.InventoryItems.FirstOrDefault(item => item.Id == Ids.Mercurial.Id);
+            var dervish = Player.InventoryItems.FirstOrDefault(item => item.Id == Ids.Dervish.Id);
+            if (Ids.Quicksilver.IsReady())
+                if (qss != null)
+                {
+                    var firstOrDefault =
+                        qss.SpellSlot;
+                    EloBuddy.Player.CastSpell(firstOrDefault);
+                }
+                else if (Ids.Mercurial.IsReady())
+                    if (mercurial != null)
+                    {
+                        var firstOrDefault =
+                            mercurial.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+                    else if (Ids.Dervish.IsReady())
+                        if (dervish != null)
+                        {
+                            var firstOrDefault =
+                                dervish.SpellSlot;
+                            EloBuddy.Player.CastSpell(firstOrDefault);
+                        }
+        }
+
+
+
+        protected static void OnInterruptable(Obj_AI_Base sender,
+            Interrupter.InterruptableSpellEventArgs args)
+        {
+
+
+        }
+
+
+
+        private static void PotionManagement()
+        {
+            if (Player.HasBuff("RegenerationPotion") || Player.HasBuff("ItemMiniRegenPotion") ||
+                Player.HasBuff("ItemCrystalFlaskJungle") || Player.HasBuff("ItemDarkCrystalFlask"))
+                return;
+
+            if (Ids.Potion.IsReady())
+            {
+                var inventorySlot = Player.InventoryItems.FirstOrDefault(item => item.Id == ItemId.Health_Potion);
+                if (Player.Health + 200 < Player.MaxHealth && Player.CountEnemiesInRange(700) > 0)
+                {
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+                }
+                else if (Player.Health < Player.MaxHealth * 0.6)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+            }
+            else if (Ids.Biscuit.IsReady())
+            {
+                var inventorySlot = Player.InventoryItems.FirstOrDefault(item => item.Id == Ids.Biscuit.Id);
+                if (Player.Health + 250 < Player.MaxHealth && Player.CountEnemiesInRange(700) > 0)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+                if (Player.Health < Player.MaxHealth * 0.6)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+            }
+            else if (Ids.Hunter.IsReady())
+            {
+                var inventorySlot = Player.InventoryItems.FirstOrDefault(item => item.Id == Ids.Hunter.Id);
+                if (Player.Health + 250 < Player.MaxHealth && Player.CountEnemiesInRange(700) > 0)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+                if (Player.Health < Player.MaxHealth * 0.6)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+            }
+            else if (Ids.Corrupting.IsReady())
+            {
+                var inventorySlot = Player.InventoryItems.FirstOrDefault(item => item.Id == Ids.Corrupting.Id);
+                if (Player.Health + 250 < Player.MaxHealth && Player.CountEnemiesInRange(700) > 0)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+                if (Player.Health < Player.MaxHealth * 0.6)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+            }
+            else if (Ids.Refillable.IsReady())
+            {
+                var inventorySlot = Player.InventoryItems.FirstOrDefault(item => item.Id == Ids.Refillable.Id);
+                if (Player.Health + 250 < Player.MaxHealth && Player.CountEnemiesInRange(700) > 0)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+                if (Player.Health < Player.MaxHealth * 0.6)
+                    if (inventorySlot != null)
+                    {
+                        var firstOrDefault =
+                            inventorySlot.SpellSlot;
+                        EloBuddy.Player.CastSpell(firstOrDefault);
+                    }
+            }
+        }
 
         private static void Game_OnGameUpdate(EventArgs args)
         {
             if (Player.IsRecalling() || Player.IsDead)
                 return;
-      
+
+
             if (Combo && Config.AACombo)
             {
                 if (!E.IsReady())
@@ -465,12 +402,10 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
             }
         }
 
-
-
         private static void LogicE()
         {
             var t = TargetSelector.GetTarget(E.Range, DamageType.Physical);
-            if (t.IsValidTarget() && !t.HasBuff("ThreshQ") && Utils2.CanMove(t))
+            if (t.IsValidTarget() && !t.HasBuff("ThreshQ") && Utils.CanMove(t))
             {
                 if (Combo)
                 {
@@ -511,7 +446,7 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                         }
                     }
 
-                    if (Utils2.GetPassiveTime(enemy, "ThreshQ") < 0.4)
+                    if (Utils.GetPassiveTime(enemy, "ThreshQ") < 0.4)
                         Q2.Cast();
                 }
                 return;
@@ -522,12 +457,12 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                 var t = TargetSelector.GetTarget(Config.maxGrab, DamageType.Physical);
 
                 if (t.IsValidTarget(Config.maxGrab) && !t.HasBuffOfType(BuffType.SpellImmunity) &&
-                    !t.HasBuffOfType(BuffType.SpellShield) && Menu1["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue && Player.Distance(t.ServerPosition) > Config.minGrab)
+                    !t.HasBuffOfType(BuffType.SpellShield) && QMenu["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue && Player.Distance(t.ServerPosition) > Config.minGrab)
                     CastSpell(Q, t, predQ(), Config.maxGrab);
             }
 
 
-            foreach (var t in Enemies.Where(t => t.IsValidTarget(Config.maxGrab) && Menu1["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue))
+            foreach (var t in Enemies.Where(t => t.IsValidTarget(Config.maxGrab) && QMenu["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue))
             {
                 if (!t.HasBuffOfType(BuffType.SpellImmunity) && !t.HasBuffOfType(BuffType.SpellShield) &&
                     Player.Distance(t.ServerPosition) > Config.minGrab)
@@ -537,7 +472,7 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
 
                     if (Config.qCC)
                     {
-                        if (!Utils2.CanMove(t))
+                        if (!Utils.CanMove(t))
                             Q.Cast(t);
                         var pred = Q.GetPrediction(t);
                         if (pred.HitChance == (EloBuddy.SDK.Enumerations.HitChance)HitChance.Dashing)
@@ -553,6 +488,26 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
             }
         }
 
+        private static void Pull()
+        {
+            var target = TargetSelector.GetTarget(E.Range, DamageType.Magical);
+            Orbwalker.OrbwalkTo(Game.CursorPos.Extend(Game.CursorPos, 200).To3D());
+
+            if (E.IsReady() && Player.Distance(target.Position) < E.Range)
+            {
+                CastSpell(E, target, predE(), (int)E.Range);
+            }
+        }
+
+        private static void Push()
+        {
+            var target = TargetSelector.GetTarget(E.Range, DamageType.Magical);
+            Orbwalker.OrbwalkTo(Game.CursorPos.Extend(Game.CursorPos, 200).To3D());
+            if (E.IsReady() && Player.Distance(target.Position) < E.Range)
+            {
+                E.Cast(target.Position);
+            }
+        }
         private static bool collision;
         private static void Qcoltick(EventArgs args)
         {
@@ -595,7 +550,7 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                 Type = coreType2
             };
             var poutput2 = Prediction.GetPrediction(predInput2);
-            if (QWER.Speed < float.MaxValue && Utils2.CollisionYasuo(Player.ServerPosition, poutput2.CastPosition))
+            if (QWER.Speed < float.MaxValue && Utils.CollisionYasuo(Player.ServerPosition, poutput2.CastPosition))
                 return;
 
             if (hitchance == HitChance.VeryHigh)
@@ -625,12 +580,12 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
             }
         }
 
-        private static void OnPostAttack(AttackableUnit target, EventArgs args)
+        protected static void OnPostAttack(AttackableUnit target, EventArgs args)
         {
             IsAutoAttacking = false;
         }
 
-        private static void OnPreAttack(AttackableUnit target, Orbwalker.PreAttackArgs args)
+        protected static void OnPreAttack(AttackableUnit target, Orbwalker.PreAttackArgs args)
         {
             IsAutoAttacking = true;
         }
@@ -686,7 +641,7 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
 
                     if (Config.autoW)
                     {
-                        var dmg = Utils2.GetIncomingDamage(ally);
+                        var dmg = Utils.GetIncomingDamage(ally);
                         if (dmg == 0)
                             continue;
 
@@ -707,50 +662,6 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                             W.Cast(W.GetPrediction(ally).CastPosition);
                     }
                 }
-        }
-
-
-        static void SafeLanternKeybind()
-        {
-            AIHeroClient Wtarget = null;
-            float Hp = 0;
-
-            foreach (var hero in ObjectManager.Get<AIHeroClient>()
-                .Where(x => x.IsAlly && !x.IsDead && !x.IsMe &&
-                Player.Distance(x.Position) < 1500 &&
-                !x.HasBuff("Recall")))
-            {
-                var temp = hero.HealthPercent;
-
-                if (hero.HasBuffOfType(BuffType.Suppression) ||
-                    hero.HasBuffOfType(BuffType.Taunt) ||
-                    hero.HasBuffOfType(BuffType.Knockup) ||
-                    hero.HasBuffOfType(BuffType.Stun) ||
-                    hero.HasBuffOfType(BuffType.Slow) ||
-                    hero.HasBuffOfType(BuffType.Flee))
-                {
-                    if (Player.Distance(hero.Position) <= W.Range)
-                    {
-                        CastW(hero.Position);
-                    }
-                }
-
-                if (Wtarget == null && Hp == 0)
-                {
-                    Wtarget = hero;
-                    Hp = temp;
-                }
-                else if (temp < Hp)
-                {
-                    Wtarget = hero;
-                    Hp = temp;
-                }
-            }
-
-            if (Wtarget != null)
-            {
-                CastW(Wtarget.Position);
-            }
         }
 
 
@@ -777,9 +688,7 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                 Unit = target,
                 Type = coreType2
             };
-            var eprediction = Utils.Prediction.GetPrediction(predInput2);
-            var Etarget = TargetSelector.GetTarget(E.Range, DamageType.Magical);
-
+            var eprediction = Utility.Prediction.GetPrediction(predInput2);
             if (pull && eprediction.Hitchance >= predE())
             {
                 CastSpell(E, target, predE(), (int)E.Range);
@@ -789,18 +698,7 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                 var position = Player.ServerPosition - (eprediction.CastPosition - Player.ServerPosition);
                 E.Cast(position);
             }
-
-            if (Config.SafeLanternKey)
-            {
-                SafeLanternKeybind();
-            }
-
-            if (Config.UseSafeLantern)
-            {
-                SafeLantern();
-            }
         }
-
 
         private static HitChance predQ()
         {
@@ -835,11 +733,9 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
         }
 
         private static void Drawing_OnDraw(EventArgs args)
+
         {
             var target = TargetSelector.GetTarget(Q.Range, DamageType.Magical);
-
-
-
             if (Config.qRange)
             {
                 if (Config.onlyRdy)
@@ -862,6 +758,11 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                     Drawing.DrawCircle(Player.Position, W.Range, Color.Cyan);
             }
 
+            if (Config.DrawTarget && target != null)
+            {
+                Drawing.DrawCircle(target.Position, 50, System.Drawing.Color.Red);
+            }
+
             if (Config.eRange)
             {
                 if (Config.onlyRdy)
@@ -871,11 +772,6 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                 }
                 else
                     Drawing.DrawCircle(Player.Position, E.Range, Color.Orange);
-            }
-
-            if (Config.DrawTarget && target != null)
-            {
-                Drawing.DrawCircle(target.Position, 150, System.Drawing.Color.Red);
             }
 
             if (Config.rRange)
@@ -889,28 +785,6 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
                     Drawing.DrawCircle(Player.Position, R.Range, Color.Gray);
             }
         }
-
-        private static void Pull()
-        {
-            var target = TargetSelector.GetTarget(E.Range, DamageType.Magical);
-            Orbwalker.OrbwalkTo(Game.CursorPos.Extend(Game.CursorPos, 200).To3D());
-
-            if (E.IsReady() && Player.Distance(target.Position) < E.Range)
-            {
-                CastSpell(E, target, predE(), (int)E.Range);
-            }
-        }
-
-        private static void Push()
-        {
-            var target = TargetSelector.GetTarget(E.Range, DamageType.Magical);
-            Orbwalker.OrbwalkTo(Game.CursorPos.Extend(Game.CursorPos, 200).To3D());
-            if (E.IsReady() && Player.Distance(target.Position) < E.Range)
-            {
-                E.Cast(target.Position);
-            }
-        }
-
 
         public static class Ids
         {
@@ -933,6 +807,164 @@ public static void StringList(Menu menu, string uniqueId, string displayName, st
             public static readonly Item Seraph = new Item(3040);
             public static readonly Item Solari = new Item(3190, 600f);
             public static readonly Item Randuin = new Item(3143, 400f);
+        }
+
+        public static class Config
+        {
+            public static bool AACombo
+            {
+                get { return QMenu["AACombo"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool ts
+            {
+                get { return QMenu["ts"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool ts1
+            {
+                get { return QMenu["ts1"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool ts2
+            {
+                get { return QMenu["ts2"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool qCC
+            {
+                get { return QMenu["qCC"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static int minGrab
+            {
+                get { return QMenu["minGrab"].Cast<Slider>().CurrentValue; }
+            }
+
+            public static int maxGrab
+            {
+                get { return QMenu["maxGrab"].Cast<Slider>().CurrentValue; }
+            }
+
+            public static bool GapQ
+            {
+                get { return QMenu["GapQ"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool autoW
+            {
+                get { return WMenu["autoW"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static int Wdmg
+            {
+                get { return WMenu["Wdmg"].Cast<Slider>().CurrentValue; }
+            }
+
+            public static bool autoW2
+            {
+                get { return WMenu["autoW2"].Cast<CheckBox>().CurrentValue; }
+            }
+            public static bool DrawTarget
+            {
+                get { return DrawingsMenu["DrawTarget"].Cast<CheckBox>().CurrentValue; }
+            }
+
+
+            public static bool autoW3
+            {
+                get { return WMenu["autoW3"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static int wCount
+            {
+                get { return WMenu["wCount"].Cast<Slider>().CurrentValue; }
+            }
+
+            public static bool AntiRengar
+            {
+                get { return EMenu["AntiRengar"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool Pull
+            {
+                get { return EMenu["pullEnemy"].Cast<KeyBind>().CurrentValue; }
+            }
+
+            public static bool Push
+            {
+                get { return EMenu["pushEnemy"].Cast<KeyBind>().CurrentValue; }
+            }
+
+            public static bool autoE
+            {
+                get { return EMenu["autoE"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool pushE
+            {
+                get { return EMenu["pushE"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool inter
+            {
+                get { return EMenu["inter"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool Gap
+            {
+                get { return EMenu["Gap"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static int rCount
+            {
+                get { return RMenu["rCount"].Cast<Slider>().CurrentValue; }
+            }
+
+            public static bool rKs
+            {
+                get { return RMenu["rKs"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool comboR
+            {
+                get { return RMenu["comboR"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool qRange
+            {
+                get { return DrawingsMenu["qRange"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool wRange
+            {
+                get { return DrawingsMenu["wRange"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool eRange
+            {
+                get { return DrawingsMenu["eRange"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool rRange
+            {
+                get { return DrawingsMenu["rRange"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static bool onlyRdy
+            {
+                get { return DrawingsMenu["onlyRdy"].Cast<CheckBox>().CurrentValue; }
+            }
+
+            public static int Qpred
+            {
+                get { return PredictionMenu["Qpred"].Cast<Slider>().CurrentValue; }
+            }
+
+            public static int Epred
+            {
+                get { return PredictionMenu["Epred"].Cast<Slider>().CurrentValue; }
+            }
         }
     }
 }

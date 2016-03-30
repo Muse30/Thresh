@@ -67,15 +67,15 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\Dash.cs" />
-    <Compile Include="Utils\HuePrediction.cs" />
-    <Compile Include="Utils\Interrupter.cs" />
-    <Compile Include="Utils\LastCastedSpell.cs" />
-    <Compile Include="Utils\MathUtils.cs" />
-    <Compile Include="Utils\MEC.cs" />
-    <Compile Include="Utils\Tick.cs" />
-    <Compile Include="Utils\Utils.cs" />
-    <Compile Include="Utils\Vector2Extensions.cs" />
+    <Compile Include="Utility\Dash.cs" />
+    <Compile Include="Utility\HuePrediction.cs" />
+    <Compile Include="Utility\Interrupter.cs" />
+    <Compile Include="Utility\LastCastedSpell.cs" />
+    <Compile Include="Utility\MathUtils.cs" />
+    <Compile Include="Utility\MEC.cs" />
+    <Compile Include="Utility\Tick.cs" />
+    <Compile Include="Utility\Utils.cs" />
+    <Compile Include="Utility\Vector2Extensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

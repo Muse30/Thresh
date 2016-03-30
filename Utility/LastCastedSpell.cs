@@ -106,7 +106,7 @@ namespace Thresh
             if (spellbook.Owner.IsMe)
             {
                 LastCastPacketSent = new LastCastPacketSentEntry(
-                    args.Slot, Utils2.TickCount, (args.Target is Obj_AI_Base) ? args.Target.NetworkId : 0);
+                    args.Slot, Utils.TickCount, (args.Target is Obj_AI_Base) ? args.Target.NetworkId : 0);
             }
         }
 
@@ -119,7 +119,7 @@ namespace Thresh
         {
             if (sender is Obj_AI_Base)
             {
-                var entry = new LastCastedSpellEntry(args.SData.Name, Utils2.TickCount, ObjectManager.Player);
+                var entry = new LastCastedSpellEntry(args.SData.Name, Utils.TickCount, ObjectManager.Player);
                 if (CastedSpells.ContainsKey(sender.NetworkId))
                 {
                     CastedSpells[sender.NetworkId] = entry;
@@ -140,7 +140,7 @@ namespace Thresh
         {
             return CastedSpells.ContainsKey(unit.NetworkId)
                 ? CastedSpells[unit.NetworkId].Tick
-                : (Utils2.TickCount > 0 ? 0 : int.MinValue);
+                : (Utils.TickCount > 0 ? 0 : int.MinValue);
         }
 
         /// <summary>

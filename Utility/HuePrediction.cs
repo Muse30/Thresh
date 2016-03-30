@@ -35,7 +35,7 @@ using Dash = EloBuddy.SDK.Events.Dash;
 
 #endregion
 
-namespace Thresh.Utils
+namespace Thresh.Utility
 {
     public enum HitChance
     {
@@ -430,6 +430,7 @@ namespace Thresh.Utils
 
             if (UnitTracker.GetLastVisableTime(input.Unit) < 0.1d)
             {
+          
                 result.Hitchance = HitChance.Medium;
                 return result;
             }
@@ -455,7 +456,6 @@ namespace Thresh.Utils
 
             if (distanceFromToWaypoint > fixRange && GetAngle(input.From, input.Unit) < angleMove)
             {
-           
                 result.Hitchance = HitChance.VeryHigh;
                 return result;
             }
@@ -480,7 +480,6 @@ namespace Thresh.Utils
                 else
                     result.Hitchance = HitChance.High;
 
-           
                 return result;
             }
 
@@ -502,7 +501,6 @@ namespace Thresh.Utils
                     else
                         result.Hitchance = HitChance.VeryHigh;
 
-                    
                     return result;
                 }
             }
@@ -513,7 +511,6 @@ namespace Thresh.Utils
             {
                 if (UnitTracker.GetLastNewPathTime(input.Unit) < 0.1d && GetAngle(input.From, input.Unit) < angleMove && distanceUnitToWaypoint > moveArea * 0.6)
                 {
-                    
                     result.Hitchance = HitChance.VeryHigh;
                     return result;
 
@@ -955,7 +952,7 @@ namespace Thresh.Utils
             internal static Vector2[] GetCandidates(Vector2 from, Vector2 to, float radius, float range)
             {
                 var middlePoint = (from + to) / 2;
-                var intersections = Utils2.CircleCircleIntersection(
+                var intersections = Utils.CircleCircleIntersection(
                     from, middlePoint, radius, from.Distance(middlePoint));
 
                 if (intersections.Length > 1)
@@ -1208,7 +1205,7 @@ namespace Thresh.Utils
             foreach (var hero in ObjectManager.Get<AIHeroClient>())
             {
                 Champion.Add(hero);
-                UnitTrackerInfoList.Add(new UnitTrackerInfo() { NetworkId = hero.NetworkId, AaTick = Utils2.TickCount, StopMoveTick = Utils2.TickCount, NewPathTick = Utils2.TickCount, SpecialSpellFinishTick = Utils2.TickCount, LastInvisableTick = Utils2.TickCount });
+                UnitTrackerInfoList.Add(new UnitTrackerInfo() { NetworkId = hero.NetworkId, AaTick = Utils.TickCount, StopMoveTick = Utils.TickCount, NewPathTick = Utils.TickCount, SpecialSpellFinishTick = Utils.TickCount, LastInvisableTick = Utils.TickCount });
             }
             Obj_AI_Base.OnProcessSpellCast += Obj_AI_Base_OnProcessSpellCast;
             Obj_AI_Base.OnNewPath += Obj_AI_Hero_OnNewPath;
@@ -1222,11 +1219,11 @@ namespace Thresh.Utils
                 if (hero.IsVisible)
                 {
                     if (hero.Path.Count() > 0)
-                        UnitTrackerInfoList.Find(x => x.NetworkId == hero.NetworkId).StopMoveTick = Utils2.TickCount;
+                        UnitTrackerInfoList.Find(x => x.NetworkId == hero.NetworkId).StopMoveTick = Utils.TickCount;
                 }
                 else
                 {
-                    UnitTrackerInfoList.Find(x => x.NetworkId == hero.NetworkId).LastInvisableTick = Utils2.TickCount;
+                    UnitTrackerInfoList.Find(x => x.NetworkId == hero.NetworkId).LastInvisableTick = Utils.TickCount;
                 }
             }
         }
@@ -1236,7 +1233,7 @@ namespace Thresh.Utils
             if (sender.Type != GameObjectType.AIHeroClient) return;
 
             var info = UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId);
-            info.NewPathTick = Utils2.TickCount;
+            info.NewPathTick = Utils.TickCount;
             if (args.Path.Last() != sender.ServerPosition)
                 info.PathBank.Add(new PathInfo() { Position = args.Path.Last().To2D(), Time = Game.Time });
 
@@ -1249,13 +1246,13 @@ namespace Thresh.Utils
             if (sender.Type != GameObjectType.AIHeroClient) return;
 
             if (args.SData.IsAutoAttack())
-                UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId).AaTick = Utils2.TickCount;
+                UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId).AaTick = Utils.TickCount;
             else
             {
                 var foundSpell = spells.Find(x => args.SData.Name.ToLower() == x.name.ToLower());
                 if (foundSpell != null)
                 {
-                    UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId).SpecialSpellFinishTick = Utils2.TickCount + (int)(foundSpell.duration * 1000);
+                    UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId).SpecialSpellFinishTick = Utils.TickCount + (int)(foundSpell.duration * 1000);
                 }
             }
         }
@@ -1288,33 +1285,33 @@ namespace Thresh.Utils
         public static double GetSpecialSpellEndTime(Obj_AI_Base unit)
         {
             var TrackerUnit = UnitTrackerInfoList.Find(x => x.NetworkId == unit.NetworkId);
-            return (TrackerUnit.SpecialSpellFinishTick - Utils2.TickCount) / 1000d;
+            return (TrackerUnit.SpecialSpellFinishTick - Utils.TickCount) / 1000d;
         }
 
         public static double GetLastAutoAttackTime(Obj_AI_Base unit)
         {
             var TrackerUnit = UnitTrackerInfoList.Find(x => x.NetworkId == unit.NetworkId);
-            return (Utils2.TickCount - TrackerUnit.AaTick) / 1000d;
+            return (Utils.TickCount - TrackerUnit.AaTick) / 1000d;
         }
 
         public static double GetLastNewPathTime(Obj_AI_Base unit)
         {
             var TrackerUnit = UnitTrackerInfoList.Find(x => x.NetworkId == unit.NetworkId);
-            return (Utils2.TickCount - TrackerUnit.NewPathTick) / 1000d;
+            return (Utils.TickCount - TrackerUnit.NewPathTick) / 1000d;
         }
 
         public static double GetLastVisableTime(Obj_AI_Base unit)
         {
             var TrackerUnit = UnitTrackerInfoList.Find(x => x.NetworkId == unit.NetworkId);
 
-            return (Utils2.TickCount - TrackerUnit.LastInvisableTick) / 1000d;
+            return (Utils.TickCount - TrackerUnit.LastInvisableTick) / 1000d;
         }
 
         public static double GetLastStopMoveTime(Obj_AI_Base unit)
         {
             var TrackerUnit = UnitTrackerInfoList.Find(x => x.NetworkId == unit.NetworkId);
 
-            return (Utils2.TickCount - TrackerUnit.StopMoveTick) / 1000d;
+            return (Utils.TickCount - TrackerUnit.StopMoveTick) / 1000d;
         }
     }
 

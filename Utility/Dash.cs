@@ -5,7 +5,7 @@ using EloBuddy;
 using EloBuddy.SDK;
 using SharpDX;
 
-namespace Thresh.Utils
+namespace Thresh.Utility
 {
     public static class Dash
     {
