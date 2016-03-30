@@ -9,19 +9,18 @@ using EloBuddy.SDK.Menu;
 using EloBuddy.SDK.Menu.Values;
 using SharpDX;
 using Thresh.Utility;
-using Color = System.Drawing.Color;
 using HitChance = Thresh.Utility.HitChance;
 using Prediction = Thresh.Utility.Prediction;
+using EloBuddy.SDK.Rendering;
 
 namespace Thresh
 {
     internal class Program
     {
-        private static Menu ThreshMenu, QMenu, WMenu, EMenu, RMenu, DrawingsMenu, PredictionMenu;
+        private static Menu ThreshMenu, DrawingsMenu, PredictionMenu;
         private static Spell.Skillshot Q, W, E;
         public static Spell.Active Q2, R;
         public static List<AIHeroClient> Enemies = new List<AIHeroClient>(), Allies = new List<AIHeroClient>();
-        private static SpellSlot exhaust, ignite, heal;
         private int grab = 0, grabS = 0;
         private float grabW = 0;
         static int QMana { get { return 80; } }
@@ -58,54 +57,56 @@ namespace Thresh
                 if (hero.IsAlly)
                     Allies.Add(hero);
             }
-            Q = new Spell.Skillshot(SpellSlot.Q, 1040, SkillShotType.Linear, (int)0.5f, (int?)1900f, 70);
-            Q.AllowedCollisionCount = 0;
+            Q = new Spell.Skillshot(SpellSlot.Q, 1040, SkillShotType.Linear, (int) 0.5f, (int?) 1900f, 70);
+			Q.AllowedCollisionCount = 0;
             Q2 = new Spell.Active(SpellSlot.Q, 9000);// kappa
             W = new Spell.Skillshot(SpellSlot.W, 950, SkillShotType.Circular, 250, int.MaxValue, 10);
             W.AllowedCollisionCount = int.MaxValue;
-            E = new Spell.Skillshot(SpellSlot.E, 480, SkillShotType.Linear, (int)0.25f, int.MaxValue, 50);
+            E = new Spell.Skillshot(SpellSlot.E, 480, SkillShotType.Linear, (int) 0.25f, int.MaxValue, 50);
             E.AllowedCollisionCount = int.MaxValue;
             R = new Spell.Active(SpellSlot.R, 350);
-
+           
             ThreshMenu = MainMenu.AddMenu("TDThresh", "thresh");
-            QMenu = ThreshMenu.AddSubMenu("Q Settings", "q");
-            QMenu.Add("AACombo", new CheckBox("Disable AA if can use E"));
-            QMenu.Add("ts", new CheckBox("Use EB TargetSelector"));
-            QMenu.Add("ts1", new CheckBox("Only one target", false));
-            QMenu.Add("ts2", new CheckBox("All grab-able targets"));
-            QMenu.Add("qCC", new CheckBox("Auto Q cc & dash enemy"));
-            QMenu.Add("minGrab", new Slider("Min range grab", 250, 125, (int)Q.Range));
-            QMenu.Add("maxGrab", new Slider("Max range grab", (int)Q.Range, 125, (int)Q.Range));
-            QMenu.AddLabel("Grab:");
+            ThreshMenu.Add("AACombo", new CheckBox("Disable AA if can use E"));
+            ThreshMenu.Add("ts", new CheckBox("Use EB TargetSelector"));
+            ThreshMenu.Add("ts1", new CheckBox("Only one target", false));
+            ThreshMenu.Add("ts2", new CheckBox("All grab-able targets"));
+            ThreshMenu.Add("qCC", new CheckBox("Auto Q cc & dash enemy"));
+            ThreshMenu.Add("minGrab", new Slider("Min range grab", 250, 125, (int) Q.Range));
+            ThreshMenu.Add("maxGrab", new Slider("Max range grab", (int) Q.Range, 125, (int) Q.Range));
+            ThreshMenu.AddLabel("Grab:");
             foreach (var enemy in ObjectManager.Get<AIHeroClient>().Where(enemy => enemy.Team != Player.Team))
-                QMenu.Add("grab" + enemy.ChampionName, new CheckBox(enemy.ChampionName));
-            QMenu.AddSeparator();
-            QMenu.Add("GapQ", new CheckBox("OnEnemyGapcloser Q"));
-
-            WMenu = ThreshMenu.AddSubMenu("W Settings", "w");
-            WMenu.Add("autoW", new CheckBox("Auto W"));
-            WMenu.Add("Wdmg", new Slider("W % hp", 10, 100, 0));
-            WMenu.Add("autoW2", new CheckBox("Auto W if Q Hits"));
-            WMenu.Add("autoW3", new CheckBox("Auto W shield dmg"));
-            WMenu.Add("wCount", new Slider("Auto W if x enemies near ally", 2, 0, 5));
-            WMenu.Add("SafeLanternKey", new KeyBind("Safe Lantern", false, KeyBind.BindTypes.HoldActive, 'H'));
-
-            EMenu = ThreshMenu.AddSubMenu("E Settings", "E");
-            EMenu.Add("autoE", new CheckBox("Auto E"));
-            EMenu.Add("pushE", new CheckBox("Auto push"));
-            EMenu.Add("inter", new CheckBox("E Interrupt"));
-            EMenu.Add("Gap", new CheckBox("E on Gapcloser"));
-            EMenu.Add("AntiRengar", new CheckBox("Use E AntiGapCloser (Rengar Passive)"));
-            EMenu.Add("pullEnemy", new KeyBind("Pull Enemy", false, KeyBind.BindTypes.HoldActive, 'A'));
-            EMenu.Add("pushEnemy", new KeyBind("Push Enemy", false, KeyBind.BindTypes.HoldActive, 'N'));
-
-            RMenu = ThreshMenu.AddSubMenu("R Settings", "R");
-            RMenu.Add("rCount", new Slider("Auto R if x enemies in range", 2, 0, 5));
-            RMenu.Add("rKs", new CheckBox("R ks", false));
-            RMenu.Add("comboR", new CheckBox("Always R in combo", false));
+                ThreshMenu.Add("grab" + enemy.ChampionName, new CheckBox(enemy.ChampionName));
+            ThreshMenu.AddSeparator();
+            ThreshMenu.Add("GapQ", new CheckBox("Q on Gapcloser"));
+            ThreshMenu.AddSeparator();
+            ThreshMenu.AddGroupLabel("W SETTINGS");
+            ThreshMenu.AddSeparator();
+            ThreshMenu.Add("autoW", new CheckBox("Auto W"));
+            ThreshMenu.Add("Wdmg", new Slider("W % hp", 10, 100, 0));
+            ThreshMenu.Add("autoW2", new CheckBox("Auto W if Q Hits"));
+            ThreshMenu.Add("autoW3", new CheckBox("Auto W shield dmg"));
+            ThreshMenu.Add("wCount", new Slider("Auto W if x enemies near ally", 2, 0, 5));
+            ThreshMenu.Add("SafeLanternKey", new KeyBind("Safe Lantern", false, KeyBind.BindTypes.HoldActive, 'H'));
+            ThreshMenu.AddSeparator();
+            ThreshMenu.AddGroupLabel("E SETTINGS");
+            ThreshMenu.AddSeparator();
+            ThreshMenu.Add("autoE", new CheckBox("Auto E"));
+            ThreshMenu.Add("pushE", new CheckBox("Auto push"));
+            ThreshMenu.Add("inter", new CheckBox("E Interrupt"));
+            ThreshMenu.Add("Gap", new CheckBox("E on Gapcloser"));
+            ThreshMenu.Add("AntiRengar", new CheckBox("Use E AntiGapCloser (Rengar Passive)"));
+            ThreshMenu.Add("pullEnemy", new KeyBind("Pull Enemy", false, KeyBind.BindTypes.HoldActive, 'A'));
+            ThreshMenu.Add("pushEnemy", new KeyBind("Push Enemy", false, KeyBind.BindTypes.HoldActive, 'N'));
+            ThreshMenu.AddSeparator();
+            ThreshMenu.AddGroupLabel("R SETTINGS");
+            ThreshMenu.AddSeparator();
+            ThreshMenu.Add("rCount", new Slider("Auto R if x enemies in range", 2, 0, 5));
+            ThreshMenu.Add("rKs", new CheckBox("R ks", false));
+            ThreshMenu.Add("comboR", new CheckBox("Always R in combo", false));
 
             PredictionMenu = ThreshMenu.AddSubMenu("Prediction", "prediction");
-            StringList(PredictionMenu, "Qpred", "Q Prediction", new[] { "Low", "Medium", "High", "Very High" }, 1);
+            StringList(PredictionMenu, "Qpred", "Q Prediction", new[] { "Low","Medium", "High", "Very High"}, 3);
             StringList(PredictionMenu, "Epred", "E Prediction", new[] { "Low", "Medium", "High", "Very High" }, 1);
 
             DrawingsMenu = ThreshMenu.AddSubMenu("Drawings", "drawings");
@@ -115,7 +116,7 @@ namespace Thresh
             DrawingsMenu.Add("eRange", new CheckBox("E range"));
             DrawingsMenu.Add("rRange", new CheckBox("R range"));
             DrawingsMenu.Add("onlyRdy", new CheckBox("Draw when skill rdy"));
-
+            
             Obj_AI_Base.OnProcessSpellCast += Utils.OnProcessSpellCast;
             TickManager.Tick();
             Game.OnTick += Qcoltick;
@@ -134,7 +135,7 @@ namespace Thresh
             var mode = menu.Add(uniqueId, new Slider(displayName, defaultValue, 0, values.Length - 1));
             mode.DisplayName = displayName + ": " + values[mode.CurrentValue];
             mode.OnValueChange +=
-                delegate (ValueBase<int> sender, ValueBase<int>.ValueChangeArgs args)
+                delegate(ValueBase<int> sender, ValueBase<int>.ValueChangeArgs args)
                 {
                     sender.DisplayName = displayName + ": " + values[args.NewValue];
                 };
@@ -160,7 +161,7 @@ namespace Thresh
             E.Cast(target);
         }
 
-
+     
         static void Obj_AI_Base_OnPlayAnimation(Obj_AI_Base sender, GameObjectPlayAnimationEventArgs args)
         {
             if (sender.IsMe)
@@ -255,16 +256,16 @@ namespace Thresh
                         }
         }
 
-
+   
 
         protected static void OnInterruptable(Obj_AI_Base sender,
             Interrupter.InterruptableSpellEventArgs args)
         {
-
-
+         
+        
         }
 
-
+  
 
         private static void PotionManagement()
         {
@@ -284,7 +285,7 @@ namespace Thresh
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
                 }
-                else if (Player.Health < Player.MaxHealth * 0.6)
+                else if (Player.Health < Player.MaxHealth*0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -302,7 +303,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth * 0.6)
+                if (Player.Health < Player.MaxHealth*0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -320,7 +321,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth * 0.6)
+                if (Player.Health < Player.MaxHealth*0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -338,7 +339,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth * 0.6)
+                if (Player.Health < Player.MaxHealth*0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -356,7 +357,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth * 0.6)
+                if (Player.Health < Player.MaxHealth*0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -406,7 +407,7 @@ namespace Thresh
         {
             var t = TargetSelector.GetTarget(E.Range, DamageType.Physical);
             if (t.IsValidTarget() && !t.HasBuff("ThreshQ") && Utils.CanMove(t))
-            {
+            {  
                 if (Combo)
                 {
                     CastE(false, t);
@@ -415,7 +416,7 @@ namespace Thresh
                 {
                     CastE(true, t);
                 }
-
+      
             }
         }
 
@@ -457,12 +458,12 @@ namespace Thresh
                 var t = TargetSelector.GetTarget(Config.maxGrab, DamageType.Physical);
 
                 if (t.IsValidTarget(Config.maxGrab) && !t.HasBuffOfType(BuffType.SpellImmunity) &&
-                    !t.HasBuffOfType(BuffType.SpellShield) && QMenu["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue && Player.Distance(t.ServerPosition) > Config.minGrab)
+                    !t.HasBuffOfType(BuffType.SpellShield) && ThreshMenu["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue && Player.Distance(t.ServerPosition) > Config.minGrab)
                     CastSpell(Q, t, predQ(), Config.maxGrab);
             }
 
 
-            foreach (var t in Enemies.Where(t => t.IsValidTarget(Config.maxGrab) && QMenu["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue))
+            foreach (var t in Enemies.Where(t => t.IsValidTarget(Config.maxGrab) && ThreshMenu["grab" + t.ChampionName].Cast<CheckBox>().CurrentValue))
             {
                 if (!t.HasBuffOfType(BuffType.SpellImmunity) && !t.HasBuffOfType(BuffType.SpellShield) &&
                     Player.Distance(t.ServerPosition) > Config.minGrab)
@@ -514,7 +515,7 @@ namespace Thresh
             if (Orbwalker.LastTarget != null && Orbwalker.LastTarget is AIHeroClient)
             {
                 var target = Orbwalker.LastTarget as AIHeroClient;
-                var pred = Q.GetPrediction(target);
+            var pred = Q.GetPrediction(target);
                 if (pred.CollisionObjects.Any())
                 {
                     collision = true;
@@ -594,9 +595,9 @@ namespace Thresh
         {
             return ObjectManager.Player.CalculateDamageOnUnit(target, DamageType.Physical,
                 (float)
-                    (new double[] { 80, 120, 160, 200, 240 }[
+                    (new double[] {80, 120, 160, 200, 240}[
                         ObjectManager.Player.Spellbook.GetSpell(SpellSlot.R).Level - 1]
-                     + 1 * (ObjectManager.Player.TotalMagicalDamage)));
+                     + 1*(ObjectManager.Player.TotalMagicalDamage)));
         }
 
         private static void LogicR()
@@ -632,38 +633,38 @@ namespace Thresh
         private static void LogicW()
         {
             if (Allies.Any())
-                foreach (var ally in Allies.Where(ally => ally.IsValid && !ally.IsDead && Player.Distance(ally) < W.Range))
+            foreach (var ally in Allies.Where(ally => ally.IsValid && !ally.IsDead && Player.Distance(ally) < W.Range))
+            {
+                var nearEnemys = ally.CountEnemiesInRange(900);
+
+                if (nearEnemys >= Config.wCount && Config.wCount > 0)
+                    CastW(W.GetPrediction(ally).CastPosition);
+
+                if (Config.autoW)
                 {
-                    var nearEnemys = ally.CountEnemiesInRange(900);
+                    var dmg = Utils.GetIncomingDamage(ally);
+                    if (dmg == 0)
+                        continue;
 
-                    if (nearEnemys >= Config.wCount && Config.wCount > 0)
-                        CastW(W.GetPrediction(ally).CastPosition);
+                    var sensitivity = 20;
 
-                    if (Config.autoW)
-                    {
-                        var dmg = Utils.GetIncomingDamage(ally);
-                        if (dmg == 0)
-                            continue;
+                    var HpPercentage = (dmg*100)/ally.Health;
+                    var shieldValue = 20 + (Player.Level*20) + (0.4*Player.FlatMagicDamageMod);
 
-                        var sensitivity = 20;
+                    nearEnemys = (nearEnemys == 0) ? 1 : nearEnemys;
 
-                        var HpPercentage = (dmg * 100) / ally.Health;
-                        var shieldValue = 20 + (Player.Level * 20) + (0.4 * Player.FlatMagicDamageMod);
-
-                        nearEnemys = (nearEnemys == 0) ? 1 : nearEnemys;
-
-                        if (dmg > shieldValue && Config.autoW3)
-                            W.Cast(W.GetPrediction(ally).CastPosition);
-                        else if (dmg > 100 + Player.Level * sensitivity)
-                            W.Cast(W.GetPrediction(ally).CastPosition);
-                        else if (ally.Health - dmg < nearEnemys * ally.Level * sensitivity)
-                            W.Cast(W.GetPrediction(ally).CastPosition);
-                        else if (HpPercentage >= Config.Wdmg)
-                            W.Cast(W.GetPrediction(ally).CastPosition);
-                    }
+                    if (dmg > shieldValue && Config.autoW3)
+                        W.Cast(W.GetPrediction(ally).CastPosition);
+                    else if (dmg > 100 + Player.Level*sensitivity)
+                        W.Cast(W.GetPrediction(ally).CastPosition);
+                    else if (ally.Health - dmg < nearEnemys*ally.Level*sensitivity)
+                        W.Cast(W.GetPrediction(ally).CastPosition);
+                    else if (HpPercentage >= Config.Wdmg)
+                        W.Cast(W.GetPrediction(ally).CastPosition);
                 }
+            }
         }
-
+      
 
         private static void CastE(bool pull, AIHeroClient target)
         {
@@ -691,7 +692,7 @@ namespace Thresh
             var eprediction = Utility.Prediction.GetPrediction(predInput2);
             if (pull && eprediction.Hitchance >= predE())
             {
-                CastSpell(E, target, predE(), (int)E.Range);
+                CastSpell(E, target, predE(), (int) E.Range);
             }
             else
             {
@@ -741,10 +742,11 @@ namespace Thresh
                 if (Config.onlyRdy)
                 {
                     if (Q.IsReady())
-                        Drawing.DrawCircle(Player.Position, Config.maxGrab, Color.Cyan);
+
+                        Circle.Draw(Color.Blue, Config.maxGrab, ObjectManager.Player.Position);
                 }
                 else
-                    Drawing.DrawCircle(Player.Position, Config.maxGrab, Color.Cyan);
+                    Circle.Draw(Color.Blue, Config.maxGrab, ObjectManager.Player.Position);
             }
 
             if (Config.wRange)
@@ -752,10 +754,11 @@ namespace Thresh
                 if (Config.onlyRdy)
                 {
                     if (E.IsReady())
-                        Drawing.DrawCircle(Player.Position, W.Range, Color.Cyan);
+                        Circle.Draw(Color.Red, W.Range, ObjectManager.Player.Position);
+
                 }
                 else
-                    Drawing.DrawCircle(Player.Position, W.Range, Color.Cyan);
+                    Circle.Draw(Color.Red, W.Range, ObjectManager.Player.Position);
             }
 
             if (Config.DrawTarget && target != null)
@@ -768,10 +771,10 @@ namespace Thresh
                 if (Config.onlyRdy)
                 {
                     if (E.IsReady())
-                        Drawing.DrawCircle(Player.Position, E.Range, Color.Orange);
+                        Circle.Draw(Color.Orange, E.Range, ObjectManager.Player.Position);
                 }
                 else
-                    Drawing.DrawCircle(Player.Position, E.Range, Color.Orange);
+                    Circle.Draw(Color.Orange, E.Range, ObjectManager.Player.Position);
             }
 
             if (Config.rRange)
@@ -779,10 +782,10 @@ namespace Thresh
                 if (Config.onlyRdy)
                 {
                     if (R.IsReady())
-                        Drawing.DrawCircle(Player.Position, R.Range, Color.Gray);
+                        Circle.Draw(Color.Magenta, R.Range, ObjectManager.Player.Position);
                 }
                 else
-                    Drawing.DrawCircle(Player.Position, R.Range, Color.Gray);
+                    Circle.Draw(Color.Magenta, R.Range, ObjectManager.Player.Position);
             }
         }
 
@@ -813,57 +816,57 @@ namespace Thresh
         {
             public static bool AACombo
             {
-                get { return QMenu["AACombo"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["AACombo"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool ts
             {
-                get { return QMenu["ts"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["ts"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool ts1
             {
-                get { return QMenu["ts1"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["ts1"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool ts2
             {
-                get { return QMenu["ts2"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["ts2"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool qCC
             {
-                get { return QMenu["qCC"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["qCC"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static int minGrab
             {
-                get { return QMenu["minGrab"].Cast<Slider>().CurrentValue; }
+                get { return ThreshMenu["minGrab"].Cast<Slider>().CurrentValue; }
             }
 
             public static int maxGrab
             {
-                get { return QMenu["maxGrab"].Cast<Slider>().CurrentValue; }
+                get { return ThreshMenu["maxGrab"].Cast<Slider>().CurrentValue; }
             }
 
             public static bool GapQ
             {
-                get { return QMenu["GapQ"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["GapQ"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool autoW
             {
-                get { return WMenu["autoW"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["autoW"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static int Wdmg
             {
-                get { return WMenu["Wdmg"].Cast<Slider>().CurrentValue; }
+                get { return ThreshMenu["Wdmg"].Cast<Slider>().CurrentValue; }
             }
 
             public static bool autoW2
             {
-                get { return WMenu["autoW2"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["autoW2"].Cast<CheckBox>().CurrentValue; }
             }
             public static bool DrawTarget
             {
@@ -873,62 +876,62 @@ namespace Thresh
 
             public static bool autoW3
             {
-                get { return WMenu["autoW3"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["autoW3"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static int wCount
             {
-                get { return WMenu["wCount"].Cast<Slider>().CurrentValue; }
+                get { return ThreshMenu["wCount"].Cast<Slider>().CurrentValue; }
             }
 
             public static bool AntiRengar
             {
-                get { return EMenu["AntiRengar"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["AntiRengar"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool Pull
             {
-                get { return EMenu["pullEnemy"].Cast<KeyBind>().CurrentValue; }
+                get { return ThreshMenu["pullEnemy"].Cast<KeyBind>().CurrentValue; }
             }
 
             public static bool Push
             {
-                get { return EMenu["pushEnemy"].Cast<KeyBind>().CurrentValue; }
+                get { return ThreshMenu["pushEnemy"].Cast<KeyBind>().CurrentValue; }
             }
 
             public static bool autoE
             {
-                get { return EMenu["autoE"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["autoE"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool pushE
             {
-                get { return EMenu["pushE"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["pushE"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool inter
             {
-                get { return EMenu["inter"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["inter"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool Gap
             {
-                get { return EMenu["Gap"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["Gap"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static int rCount
             {
-                get { return RMenu["rCount"].Cast<Slider>().CurrentValue; }
+                get { return ThreshMenu["rCount"].Cast<Slider>().CurrentValue; }
             }
 
             public static bool rKs
             {
-                get { return RMenu["rKs"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["rKs"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool comboR
             {
-                get { return RMenu["comboR"].Cast<CheckBox>().CurrentValue; }
+                get { return ThreshMenu["comboR"].Cast<CheckBox>().CurrentValue; }
             }
 
             public static bool qRange
