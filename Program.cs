@@ -22,8 +22,6 @@ namespace Thresh
         public static Spell.Active Q2, R;
         public static List<AIHeroClient> Enemies = new List<AIHeroClient>(), Allies = new List<AIHeroClient>();
         private static SpellSlot exhaust, ignite, heal;
-        private static int grab = 0, grabS = 0;
-        private static float grabW = 0;
         static int QMana { get { return 80; } }
         static int WMana { get { return 50 * W.Level; } }
         static int EMana { get { return 60 * E.Level; } }
