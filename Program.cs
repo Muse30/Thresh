@@ -21,8 +21,6 @@ namespace Thresh
         private static Spell.Skillshot Q, W, E;
         public static Spell.Active Q2, R;
         public static List<AIHeroClient> Enemies = new List<AIHeroClient>(), Allies = new List<AIHeroClient>();
-        private int grab = 0, grabS = 0;
-        private float grabW = 0;
         static int QMana { get { return 80; } }
         static int WMana { get { return 50 * W.Level; } }
         static int EMana { get { return 60 * E.Level; } }
@@ -115,7 +113,6 @@ namespace Thresh
             DrawingsMenu.Add("wRange", new CheckBox("W range"));
             DrawingsMenu.Add("eRange", new CheckBox("E range"));
             DrawingsMenu.Add("rRange", new CheckBox("R range"));
-            DrawingsMenu.Add("onlyRdy", new CheckBox("Draw when skill rdy"));
 
             Obj_AI_Base.OnProcessSpellCast += Utils.OnProcessSpellCast;
             TickManager.Tick();
