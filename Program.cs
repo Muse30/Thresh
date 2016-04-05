@@ -57,23 +57,23 @@ namespace Thresh
                 if (hero.IsAlly)
                     Allies.Add(hero);
             }
-            Q = new Spell.Skillshot(SpellSlot.Q, 1040, SkillShotType.Linear, (int) 0.5f, (int?) 1900f, 70);
-			Q.AllowedCollisionCount = 0;
-            Q2 = new Spell.Active(SpellSlot.Q, 9000);// kappa
+            Q = new Spell.Skillshot(SpellSlot.Q, 1040, SkillShotType.Linear, (int)0.5f, (int?)1900f, 70);
+            Q.AllowedCollisionCount = 0;
+            Q2 = new Spell.Active(SpellSlot.Q, 9000);
             W = new Spell.Skillshot(SpellSlot.W, 950, SkillShotType.Circular, 250, int.MaxValue, 10);
             W.AllowedCollisionCount = int.MaxValue;
-            E = new Spell.Skillshot(SpellSlot.E, 480, SkillShotType.Linear, (int) 0.25f, int.MaxValue, 50);
+            E = new Spell.Skillshot(SpellSlot.E, 480, SkillShotType.Linear, (int)0.25f, int.MaxValue, 50);
             E.AllowedCollisionCount = int.MaxValue;
             R = new Spell.Active(SpellSlot.R, 350);
-           
+
             ThreshMenu = MainMenu.AddMenu("TDThresh", "thresh");
             ThreshMenu.Add("AACombo", new CheckBox("Disable AA if can use E"));
             ThreshMenu.Add("ts", new CheckBox("Use EB TargetSelector"));
             ThreshMenu.Add("ts1", new CheckBox("Only one target", false));
             ThreshMenu.Add("ts2", new CheckBox("All grab-able targets"));
             ThreshMenu.Add("qCC", new CheckBox("Auto Q cc & dash enemy"));
-            ThreshMenu.Add("minGrab", new Slider("Min range grab", 250, 125, (int) Q.Range));
-            ThreshMenu.Add("maxGrab", new Slider("Max range grab", (int) Q.Range, 125, (int) Q.Range));
+            ThreshMenu.Add("minGrab", new Slider("Min range grab", 250, 125, (int)Q.Range));
+            ThreshMenu.Add("maxGrab", new Slider("Max range grab", (int)Q.Range, 125, (int)Q.Range));
             ThreshMenu.AddLabel("Grab:");
             foreach (var enemy in ObjectManager.Get<AIHeroClient>().Where(enemy => enemy.Team != Player.Team))
                 ThreshMenu.Add("grab" + enemy.ChampionName, new CheckBox(enemy.ChampionName));
@@ -86,7 +86,7 @@ namespace Thresh
             ThreshMenu.Add("Wdmg", new Slider("W % hp", 10, 100, 0));
             ThreshMenu.Add("autoW2", new CheckBox("Auto W if Q Hits"));
             ThreshMenu.Add("autoW3", new CheckBox("Auto W shield dmg"));
-            ThreshMenu.Add("wCount", new Slider("Auto W if x enemies near ally", 2, 0, 5));
+            ThreshMenu.Add("wCount", new Slider("Auto W if x enemies near ally", 3, 0, 5));
             ThreshMenu.Add("SafeLanternKey", new KeyBind("Safe Lantern", false, KeyBind.BindTypes.HoldActive, 'H'));
             ThreshMenu.AddSeparator();
             ThreshMenu.AddGroupLabel("E SETTINGS");
@@ -106,7 +106,7 @@ namespace Thresh
             ThreshMenu.Add("comboR", new CheckBox("Always R in combo", false));
 
             PredictionMenu = ThreshMenu.AddSubMenu("Prediction", "prediction");
-            StringList(PredictionMenu, "Qpred", "Q Prediction", new[] { "Low","Medium", "High", "Very High"}, 3);
+            StringList(PredictionMenu, "Qpred", "Q Prediction", new[] { "Low", "Medium", "High", "Very High" }, 3);
             StringList(PredictionMenu, "Epred", "E Prediction", new[] { "Low", "Medium", "High", "Very High" }, 1);
 
             DrawingsMenu = ThreshMenu.AddSubMenu("Drawings", "drawings");
@@ -116,7 +116,7 @@ namespace Thresh
             DrawingsMenu.Add("eRange", new CheckBox("E range"));
             DrawingsMenu.Add("rRange", new CheckBox("R range"));
             DrawingsMenu.Add("onlyRdy", new CheckBox("Draw when skill rdy"));
-            
+
             Obj_AI_Base.OnProcessSpellCast += Utils.OnProcessSpellCast;
             TickManager.Tick();
             Game.OnTick += Qcoltick;
@@ -135,7 +135,7 @@ namespace Thresh
             var mode = menu.Add(uniqueId, new Slider(displayName, defaultValue, 0, values.Length - 1));
             mode.DisplayName = displayName + ": " + values[mode.CurrentValue];
             mode.OnValueChange +=
-                delegate(ValueBase<int> sender, ValueBase<int>.ValueChangeArgs args)
+                delegate (ValueBase<int> sender, ValueBase<int>.ValueChangeArgs args)
                 {
                     sender.DisplayName = displayName + ": " + values[args.NewValue];
                 };
@@ -161,7 +161,7 @@ namespace Thresh
             E.Cast(target);
         }
 
-     
+
         static void Obj_AI_Base_OnPlayAnimation(Obj_AI_Base sender, GameObjectPlayAnimationEventArgs args)
         {
             if (sender.IsMe)
@@ -256,16 +256,16 @@ namespace Thresh
                         }
         }
 
-   
+
 
         protected static void OnInterruptable(Obj_AI_Base sender,
             Interrupter.InterruptableSpellEventArgs args)
         {
-         
-        
+
+
         }
 
-  
+
 
         private static void PotionManagement()
         {
@@ -285,7 +285,7 @@ namespace Thresh
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
                 }
-                else if (Player.Health < Player.MaxHealth*0.6)
+                else if (Player.Health < Player.MaxHealth * 0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -303,7 +303,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth*0.6)
+                if (Player.Health < Player.MaxHealth * 0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -321,7 +321,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth*0.6)
+                if (Player.Health < Player.MaxHealth * 0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -339,7 +339,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth*0.6)
+                if (Player.Health < Player.MaxHealth * 0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -357,7 +357,7 @@ namespace Thresh
                             inventorySlot.SpellSlot;
                         EloBuddy.Player.CastSpell(firstOrDefault);
                     }
-                if (Player.Health < Player.MaxHealth*0.6)
+                if (Player.Health < Player.MaxHealth * 0.6)
                     if (inventorySlot != null)
                     {
                         var firstOrDefault =
@@ -407,7 +407,7 @@ namespace Thresh
         {
             var t = TargetSelector.GetTarget(E.Range, DamageType.Physical);
             if (t.IsValidTarget() && !t.HasBuff("ThreshQ") && Utils.CanMove(t))
-            {  
+            {
                 if (Combo)
                 {
                     CastE(false, t);
@@ -416,7 +416,7 @@ namespace Thresh
                 {
                     CastE(true, t);
                 }
-      
+
             }
         }
 
@@ -515,7 +515,7 @@ namespace Thresh
             if (Orbwalker.LastTarget != null && Orbwalker.LastTarget is AIHeroClient)
             {
                 var target = Orbwalker.LastTarget as AIHeroClient;
-            var pred = Q.GetPrediction(target);
+                var pred = Q.GetPrediction(target);
                 if (pred.CollisionObjects.Any())
                 {
                     collision = true;
@@ -595,9 +595,9 @@ namespace Thresh
         {
             return ObjectManager.Player.CalculateDamageOnUnit(target, DamageType.Physical,
                 (float)
-                    (new double[] {80, 120, 160, 200, 240}[
+                    (new double[] { 80, 120, 160, 200, 240 }[
                         ObjectManager.Player.Spellbook.GetSpell(SpellSlot.R).Level - 1]
-                     + 1*(ObjectManager.Player.TotalMagicalDamage)));
+                     + 1 * (ObjectManager.Player.TotalMagicalDamage)));
         }
 
         private static void LogicR()
@@ -633,38 +633,39 @@ namespace Thresh
         private static void LogicW()
         {
             if (Allies.Any())
-            foreach (var ally in Allies.Where(ally => ally.IsValid && !ally.IsDead && Player.Distance(ally) < W.Range))
-            {
-                var nearEnemys = ally.CountEnemiesInRange(900);
-
-                if (nearEnemys >= Config.wCount && Config.wCount > 0)
-                    CastW(W.GetPrediction(ally).CastPosition);
-
-                if (Config.autoW)
+                foreach (var ally in Allies.Where(ally => ally.IsValid && !ally.IsDead && Player.Distance(ally) < W.Range))
                 {
                     var dmg = Utils.GetIncomingDamage(ally);
-                    if (dmg == 0)
-                        continue;
+                    var nearEnemys = ally.CountEnemiesInRange(900);
+                    var HpPercentage = (dmg * 100) / ally.Health;
+                    if (nearEnemys >= Config.wCount && HpPercentage >= Config.wCount && Config.wCount > 0)
+                        CastW(W.GetPrediction(ally).CastPosition);
 
-                    var sensitivity = 20;
+                    if (Config.autoW)
+                    {
+                        var dmg2 = Utils.GetIncomingDamage(ally);
+                        if (dmg2 == 0)
+                            continue;
 
-                    var HpPercentage = (dmg*100)/ally.Health;
-                    var shieldValue = 20 + (Player.Level*20) + (0.4*Player.FlatMagicDamageMod);
+                        var sensitivity = 20;
 
-                    nearEnemys = (nearEnemys == 0) ? 1 : nearEnemys;
+                        var HpPercentage1 = (dmg2 * 100) / ally.Health;
+                        var shieldValue = 20 + (Player.Level * 20) + (0.4 * Player.FlatMagicDamageMod);
 
-                    if (dmg > shieldValue && Config.autoW3)
-                        W.Cast(W.GetPrediction(ally).CastPosition);
-                    else if (dmg > 100 + Player.Level*sensitivity)
-                        W.Cast(W.GetPrediction(ally).CastPosition);
-                    else if (ally.Health - dmg < nearEnemys*ally.Level*sensitivity)
-                        W.Cast(W.GetPrediction(ally).CastPosition);
-                    else if (HpPercentage >= Config.Wdmg)
-                        W.Cast(W.GetPrediction(ally).CastPosition);
+                        nearEnemys = (nearEnemys == 0) ? 1 : nearEnemys;
+
+                        if (dmg > shieldValue && Config.autoW3)
+                            W.Cast(W.GetPrediction(ally).CastPosition);
+                        else if (dmg > 100 + Player.Level * sensitivity)
+                            W.Cast(W.GetPrediction(ally).CastPosition);
+                        else if (ally.Health - dmg < nearEnemys * ally.Level * sensitivity)
+                            W.Cast(W.GetPrediction(ally).CastPosition);
+                        else if (HpPercentage1 >= Config.Wdmg)
+                            W.Cast(W.GetPrediction(ally).CastPosition);
+                    }
                 }
-            }
         }
-      
+
 
         private static void CastE(bool pull, AIHeroClient target)
         {
@@ -692,7 +693,7 @@ namespace Thresh
             var eprediction = Utility.Prediction.GetPrediction(predInput2);
             if (pull && eprediction.Hitchance >= predE())
             {
-                CastSpell(E, target, predE(), (int) E.Range);
+                CastSpell(E, target, predE(), (int)E.Range);
             }
             else
             {
